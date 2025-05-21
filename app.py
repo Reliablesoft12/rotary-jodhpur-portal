@@ -1,10 +1,14 @@
-
-from flask import Flask, render_template, request, redirect, url_for, send_file
+from flask import Flask, render_template, request, redirect, url_for, send_file, session
 from datetime import datetime, timedelta
 import sqlite3
 from weasyprint import HTML
 
 app = Flask(__name__)
+app.secret_key = 'your_super_secret_key_here'  # Change this to a strong key
+
+# Dummy credentials (can be extended to use DB later)
+USERNAME = 'admin'
+PASSWORD = 'rotary123'
 
 def init_db():
     conn = sqlite3.connect('database.db')
@@ -21,10 +25,27 @@ def init_db():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    if 'user' in session:
+        return redirect(url_for('members'))
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def login():
+    if request.form['username'] == USERNAME and request.form['password'] == PASSWORD:
+        session['user'] = USERNAME
+        return redirect(url_for('members'))
+    return render_template('login.html', error="Invalid credentials!")
+
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect(url_for('index'))
 
 @app.route('/members')
 def members():
+    if 'user' not in session:
+        return redirect(url_for('index'))
+
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
     c.execute("SELECT * FROM members")
@@ -34,6 +55,9 @@ def members():
 
 @app.route('/add_member', methods=['POST'])
 def add_member():
+    if 'user' not in session:
+        return redirect(url_for('index'))
+
     name = request.form['name']
     email = request.form['email']
     last_paid = request.form['last_paid']
@@ -49,6 +73,9 @@ def add_member():
 
 @app.route('/delete_member/<int:member_id>')
 def delete_member(member_id):
+    if 'user' not in session:
+        return redirect(url_for('index'))
+
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
     c.execute("DELETE FROM members WHERE id = ?", (member_id,))
@@ -58,6 +85,9 @@ def delete_member(member_id):
 
 @app.route('/generate_receipt/<int:member_id>')
 def generate_receipt(member_id):
+    if 'user' not in session:
+        return redirect(url_for('index'))
+
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
     c.execute("SELECT * FROM members WHERE id = ?", (member_id,))
