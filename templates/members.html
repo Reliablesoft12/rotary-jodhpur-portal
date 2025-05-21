@@ -1,0 +1,23 @@
+
+<h2>Members List</h2>
+<form method="post" action="/add_member">
+    Name: <input type="text" name="name">
+    Email: <input type="email" name="email">
+    Last Paid: <input type="date" name="last_paid">
+    <button type="submit">Add Member</button>
+</form>
+<table border="1">
+<tr><th>Name</th><th>Email</th><th>Last Paid</th><th>Next Due</th><th>Actions</th></tr>
+{% for member in members %}
+<tr>
+<td>{{ member[1] }}</td>
+<td>{{ member[2] }}</td>
+<td>{{ member[3] }}</td>
+<td>{{ member[4] }}</td>
+<td>
+    <a href="/generate_receipt/{{ member[0] }}">Receipt</a>
+    <a href="/delete_member/{{ member[0] }}">Delete</a>
+</td>
+</tr>
+{% endfor %}
+</table>
